@@ -32,35 +32,32 @@ void setup(void)
   /* Initialise the sensors */
     if(!accel.begin())
     {
-        /* There was a problem detecting the ADXL345 ... check your connections */
+        delay(5000);
         Serial.println(F("Ooops, no LSM303 detected ... Check your wiring!"));
-        while(1);
+        while(1){Serial.println('1');};
     }
     if(!mag.begin())
     {
-        /* There was a problem detecting the LSM303 ... check your connections */
         Serial.println("Ooops, no LSM303 detected ... Check your wiring!");
-        while(1);
+        while(1){Serial.println('2');};
     }
     if(!gyro.begin())
     {
-    /* There was a problem detecting the L3GD20 ... check your connections */
         Serial.print("Ooops, no L3GD20 detected ... Check your wiring or I2C ADDR!");
-        while(1);
+        while(1){Serial.println('3');};
     }
-
     if (tcs.begin()) {
         Serial.println("Found sensor");
     } else {
         Serial.println("No TCS34725 found ... check your connections");
-        while (1);
+        while (1){Serial.println('4');};
     }
 
     Serial.println(F("BME280 test"));
 
     if (!bme.begin()) {
         Serial.println("Could not find a valid BME280 sensor, check wiring!");
-        while (1);
+        while (1){Serial.println('5');};
     }
 
     /* Display some basic information on this sensor */
