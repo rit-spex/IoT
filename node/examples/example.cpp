@@ -6,12 +6,13 @@
 #include <Adafruit_LSM303_U.h>
 #include <Adafruit_L3GD20_U.h>
 #include <Adafruit_9DOF.h>
-
-#include "Adafruit_TCS34725.h"
-
+#include <Adafruit_TCS34725.h>
 #include <Adafruit_BME280.h>
+#include <Adafruit_GPS.h>
 
 #define SEALEVELPRESSURE_HPA (1013.25)
+#define GPSSerial Serial1
+#define GPSECHO false
 
 Adafruit_LSM303_Accel_Unified accel = Adafruit_LSM303_Accel_Unified(30301);
 Adafruit_LSM303_Mag_Unified   mag   = Adafruit_LSM303_Mag_Unified(30302);
@@ -20,6 +21,8 @@ Adafruit_L3GD20_Unified       gyro  = Adafruit_L3GD20_Unified(20);
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_700MS, TCS34725_GAIN_1X);
 
 Adafruit_BME280 bme; // I2C
+
+Adafruit_GPS GPS = Adafruit_GPS(&GPSSerial);
 
 
 void displaySensorDetails(void);
@@ -58,6 +61,14 @@ void setup(void)
     if (!bme.begin()) {
         Serial.println("Could not find a valid BME280 sensor, check wiring!");
         while (1){Serial.println('5');};
+    }
+    {
+      GPS.begin(9600);
+      GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+      GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
+      GPS.sendCommand(PGCMD_ANTENNA);
+      delay(1000);
+      GPSSerial.println(PMTK_Q_RELEASE);
     }
 
     /* Display some basic information on this sensor */
@@ -122,6 +133,40 @@ void loop(void)
     Serial.print("Humidity = ");
     Serial.print(bme.readHumidity());
     Serial.println(" %");
+
+    char gpsString = GPS.read();
+    if (GPSECHO) {
+      if (gpsString) Serial.print(c);
+    }
+    if (GPS.newNMEAreceived()) {
+      Serial.println(GPS.lastNMEA());
+      if (!GPS.parse(GPS.lastNMEA())) {
+        return;
+      }
+    }
+
+    Serial.print("\nTime: ");
+    Serial.print(GPS.hour, DEC); Serial.print(':');
+    Serial.print(GPS.minute, DEC); Serial.print(':');
+    Serial.print(GPS.seconds, DEC); Serial.print('.');
+    Serial.println(GPS.milliseconds);
+    Serial.print("Date: ");
+    Serial.print(GPS.day, DEC); Serial.print('/');
+    Serial.print(GPS.month, DEC); Serial.print("/20");
+    Serial.println(GPS.year, DEC);
+    Serial.print("Fix: "); Serial.print((int)GPS.fix);
+    Serial.print(" quality: "); Serial.println((int)GPS.fixquality);
+    if (GPS.fix) {
+      Serial.print("Location: ");
+      Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
+      Serial.print(", ");
+      Serial.print(GPS.longitude, 4); Serial.println(GPS.lon);
+      Serial.print("Speed (knots): "); Serial.println(GPS.speed);
+      Serial.print("Angle: "); Serial.println(GPS.angle);
+      Serial.print("Altitude: "); Serial.println(GPS.altitude);
+      Serial.print("Satellites: "); Serial.println((int)GPS.satellites);
+    }
+
 
     Serial.println();
 
