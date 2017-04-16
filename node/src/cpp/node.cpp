@@ -11,6 +11,8 @@ Adafruit_BME280 bme; // I2C
 
 Adafruit_GPS GPS = Adafruit_GPS(&GPSSerial);
 
+RH_RF95 LoRa(RFM95_CS, RFM95_INT);
+
 void setup(void)
 {
   if (SerialDebug) setupSerial();
@@ -20,6 +22,7 @@ void setup(void)
   setupColorSensor(tcs, SerialDebug);
   setupBarometer(bme, SerialDebug);
   setupGPS(GPS, SerialDebug);
+  setupLoRa(LoRa);
 }
 
 void loop(void)
@@ -66,6 +69,8 @@ void loop(void)
     prettyPrintGPSData(GPS);
     Serial.println();
   }
+
+  sendDataViaLoRa(LoRa);
   delay(1000);
 }
 
@@ -153,6 +158,66 @@ bool setupGPS(Adafruit_GPS& GPS, bool debug)
   GPS.sendCommand(PGCMD_ANTENNA);
   delay(1000);
   GPSSerial.println(PMTK_Q_RELEASE);
+}
+
+bool setupLoRa(RH_RF95& LoRa)
+{
+  pinMode(RFM95_RST, OUTPUT);
+  digitalWrite(RFM95_RST, HIGH);
+  delay(100);
+  // manual reset
+  digitalWrite(RFM95_RST, LOW);
+  delay(10);
+  digitalWrite(RFM95_RST, HIGH);
+  delay(10);
+
+  while (!LoRa.init())
+  {
+    while (1);
+  }
+
+  // Defaults after init are 434.0MHz, modulation GFSK_Rb250Fd250, +13dbM
+  if (!LoRa.setFrequency(RF95_FREQ))
+  {
+    while (1);
+  }
+  LoRa.setTxPower(23, false);
+}
+
+void sendDataViaLoRa(RH_RF95& LoRa)
+{
+  char radioPacket = *getGPSData(GPS);
+
+  delay(10);
+  LoRa.send((uint8_t *)radioPacket, sizeof(radioPacket));
+
+  delay(10);
+  LoRa.waitPacketSent();
+}
+
+char* getGPSData(Adafruit_GPS& GPS)
+{
+  char str[80];
+   strcpy (str,"these ");
+   strcat (str,"strings ");
+   strcat (str,"are ");
+   strcat (str,"concatenated.");
+
+   return str;
+
+/*
+   strcpy (str,"Time: ");
+   strcpy (str,"these ");(GPS.hour, DEC); Serial.print(':');
+   strcpy (str,"these ");(GPS.minute, DEC); Serial.print(':');
+   strcpy (str,"these ");(GPS.seconds, DEC); Serial.print('.');
+   Serial.println(GPS.milliseconds);
+   strcpy (str,"these ");("Date: ");
+   strcpy (str,"these ");(GPS.day, DEC); Serial.print('/');
+   strcpy (str,"these ");(GPS.month, DEC); Serial.print("/20");
+   strcpy (str,"these ");(GPS.year, DEC);
+   strcpy (str,"these ");("Fix: "); Serial.print((int)GPS.fix);
+   strcpy (str,"these ");(" quality: "); Serial.println((int)GPS.fixquality);
+   */
 }
 
 void prettyPrintAccelerometerData(Adafruit_LSM303_Accel_Unified& accel, sensors_event_t& event)
