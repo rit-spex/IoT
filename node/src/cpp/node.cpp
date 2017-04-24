@@ -1,5 +1,10 @@
 #include <./headers/node.h>
+#include <ArduinoJson.h>
 #define SerialDebug true
+
+JsonObject& getFullObject(DynamicJsonBuffer);
+JsonObject& getGpsJson(DynamicJsonBuffer);
+JsonObject& getBMEJson(DynamicJsonBuffer jBuffer);
 
 Adafruit_LSM303_Accel_Unified accel = Adafruit_LSM303_Accel_Unified(30301);
 Adafruit_LSM303_Mag_Unified   mag   = Adafruit_LSM303_Mag_Unified(30302);
@@ -27,6 +32,7 @@ void setup(void)
 
 void loop(void)
 {
+  /*
   sensors_event_t event;
   accel.getEvent(&event);
   mag.getEvent(&event);
@@ -61,17 +67,57 @@ void loop(void)
   if (SerialDebug)
   {
 
-    prettyPrintAccelerometerData(accel, event);
-    prettyPrintMagnetometerData(mag, event);
-    prettyPrintGyroscopeData(gyro, event);
-    prettyPrintColorSensorData(tcs);
-    prettyPrintBarometerData(bme);
+    // prettyPrintAccelerometerData(accel, event);
+    // prettyPrintMagnetometerData(mag, event);
+    // prettyPrintGyroscopeData(gyro, event);
+    // prettyPrintColorSensorData(tcs);
+    // prettyPrintBarometerData(bme);
+    Serial.println("=====================");
     prettyPrintGPSData(GPS);
     Serial.println();
   }
 
+
   sendDataViaLoRa(LoRa);
+  */
+  DynamicJsonBuffer jsonBuffer;
+
+  getFullObject(jsonBuffer).prettyPrintTo(Serial);
   delay(1000);
+}
+
+JsonObject& getFullObject(DynamicJsonBuffer jBuffer){
+  JsonObject& root = jBuffer.createObject();
+
+  root.set("GPS", getGpsJson(jBuffer));
+  root.set("BME280", getBMEJson(jBuffer));
+  return root;
+}
+
+JsonObject& getGpsJson(DynamicJsonBuffer jBuffer){
+    JsonObject& gpsObject = jBuffer.createObject();
+
+    gpsObject["lat"] = GPS.lat;
+    gpsObject["latitude"] = GPS.latitude;
+    gpsObject["lon"] = GPS.lon;
+    gpsObject["longitude"] = GPS.longitude;
+    gpsObject["speed"] = GPS.speed;
+    gpsObject["angle"] = GPS.angle;
+    gpsObject["alt"] = GPS.altitude;
+    gpsObject["sats"] = GPS.satellites;
+
+    return gpsObject;
+}
+
+JsonObject& getBMEJson(DynamicJsonBuffer jBuffer){
+    JsonObject& bmeObject = jBuffer.createObject();
+
+    bmeObject["tempc"] = bme.readTemperature();
+    bmeObject["pres"] = bme.readPressure();
+    bmeObject["alt"] = bme.readAltitude(SEALEVELPRESSURE_HPA);
+    bmeObject["hum"] = bme.readHumidity();
+
+    return bmeObject;
 }
 
 void setupSerial(void)
@@ -193,157 +239,4 @@ void sendDataViaLoRa(RH_RF95& LoRa)
 
   delay(10);
   LoRa.waitPacketSent();
-}
-
-char* getGPSData(Adafruit_GPS& GPS)
-{
-  char str[80];
-   strcpy (str,"these ");
-   strcat (str,"strings ");
-   strcat (str,"are ");
-   strcat (str,"concatenated.");
-
-   return str;
-
-/*
-   strcpy (str,"Time: ");
-   strcpy (str,"these ");(GPS.hour, DEC); Serial.print(':');
-   strcpy (str,"these ");(GPS.minute, DEC); Serial.print(':');
-   strcpy (str,"these ");(GPS.seconds, DEC); Serial.print('.');
-   Serial.println(GPS.milliseconds);
-   strcpy (str,"these ");("Date: ");
-   strcpy (str,"these ");(GPS.day, DEC); Serial.print('/');
-   strcpy (str,"these ");(GPS.month, DEC); Serial.print("/20");
-   strcpy (str,"these ");(GPS.year, DEC);
-   strcpy (str,"these ");("Fix: "); Serial.print((int)GPS.fix);
-   strcpy (str,"these ");(" quality: "); Serial.println((int)GPS.fixquality);
-   */
-}
-
-void prettyPrintAccelerometerData(Adafruit_LSM303_Accel_Unified& accel, sensors_event_t& event)
-{
-  accel.getEvent(&event);
-  Serial.print(F("ACCEL "));
-  Serial.print("X: "); Serial.print(event.acceleration.x); Serial.print("  ");
-  Serial.print("Y: "); Serial.print(event.acceleration.y); Serial.print("  ");
-  Serial.print("Z: "); Serial.print(event.acceleration.z); Serial.print("  ");Serial.println("m/s^2 ");
-}
-
-void prettyPrintMagnetometerData(Adafruit_LSM303_Mag_Unified& mag, sensors_event_t& event)
-{
-  mag.getEvent(&event);
-  Serial.print(F("MAG   "));
-  Serial.print("X: "); Serial.print(event.magnetic.x); Serial.print("  ");
-  Serial.print("Y: "); Serial.print(event.magnetic.y); Serial.print("  ");
-  Serial.print("Z: "); Serial.print(event.magnetic.z); Serial.print("  ");Serial.println("uT");
-}
-void prettyPrintGyroscopeData(Adafruit_L3GD20_Unified& gyro, sensors_event_t& event)
-{
-  gyro.getEvent(&event);
-  Serial.print(F("GYRO  "));
-  Serial.print("X: "); Serial.print(event.gyro.x); Serial.print("  ");
-  Serial.print("Y: "); Serial.print(event.gyro.y); Serial.print("  ");
-  Serial.print("Z: "); Serial.print(event.gyro.z); Serial.print("  ");Serial.println("rad/s ");
-}
-
-void prettyPrintColorSensorData(Adafruit_TCS34725& tcs)
-{
-  uint16_t r, g, b, c, colorTemp, lux;
-
-  tcs.getRawData(&r, &g, &b, &c);
-  colorTemp = tcs.calculateColorTemperature(r, g, b);
-  lux = tcs.calculateLux(r, g, b);
-
-  Serial.print("Color Temp: "); Serial.print(colorTemp, DEC); Serial.print(" K - ");
-  Serial.print("Lux: "); Serial.print(lux, DEC); Serial.print(" - ");
-  Serial.print("R: "); Serial.print(r, DEC); Serial.print(" ");
-  Serial.print("G: "); Serial.print(g, DEC); Serial.print(" ");
-  Serial.print("B: "); Serial.print(b, DEC); Serial.print(" ");
-  Serial.print("C: "); Serial.print(c, DEC); Serial.print(" ");
-  Serial.println(" ");
-}
-
-void prettyPrintBarometerData(Adafruit_BME280& bme)
-{
-  Serial.print("Temperature = ");
-  Serial.print(bme.readTemperature());
-  Serial.println(" *C");
-
-  Serial.print("Pressure = ");
-
-  Serial.print(bme.readPressure() / 100.0F);
-  Serial.println(" hPa");
-
-  Serial.print("Approx. Altitude = ");
-  Serial.print(bme.readAltitude(SEALEVELPRESSURE_HPA));
-  Serial.println(" m");
-
-  Serial.print("Humidity = ");
-  Serial.print(bme.readHumidity());
-  Serial.println(" %");
-}
-
-void prettyPrintGPSData(Adafruit_GPS& GPS)
-{
-  Serial.print("\nTime: ");
-  Serial.print(GPS.hour, DEC); Serial.print(':');
-  Serial.print(GPS.minute, DEC); Serial.print(':');
-  Serial.print(GPS.seconds, DEC); Serial.print('.');
-  Serial.println(GPS.milliseconds);
-  Serial.print("Date: ");
-  Serial.print(GPS.day, DEC); Serial.print('/');
-  Serial.print(GPS.month, DEC); Serial.print("/20");
-  Serial.println(GPS.year, DEC);
-  Serial.print("Fix: "); Serial.print((int)GPS.fix);
-  Serial.print(" quality: "); Serial.println((int)GPS.fixquality);
-  if (GPS.fix) {
-    Serial.print("Location: ");
-    Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
-    Serial.print(", ");
-    Serial.print(GPS.longitude, 4); Serial.println(GPS.lon);
-    Serial.print("Speed (knots): "); Serial.println(GPS.speed);
-    Serial.print("Angle: "); Serial.println(GPS.angle);
-    Serial.print("Altitude: "); Serial.println(GPS.altitude);
-    Serial.print("Satellites: "); Serial.println((int)GPS.satellites);
-  }
-}
-
-void displaySensorDetails(void)
-{
-  sensor_t sensor;
-
-  accel.getSensor(&sensor);
-  Serial.println(F("----------- ACCELEROMETER ----------"));
-  Serial.print  (F("Sensor:       ")); Serial.println(sensor.name);
-  Serial.print  (F("Driver Ver:   ")); Serial.println(sensor.version);
-  Serial.print  (F("Unique ID:    ")); Serial.println(sensor.sensor_id);
-  Serial.print  (F("Max Value:    ")); Serial.print(sensor.max_value); Serial.println(F(" m/s^2"));
-  Serial.print  (F("Min Value:    ")); Serial.print(sensor.min_value); Serial.println(F(" m/s^2"));
-  Serial.print  (F("Resolution:   ")); Serial.print(sensor.resolution); Serial.println(F(" m/s^2"));
-  Serial.println(F("------------------------------------"));
-  Serial.println(F(""));
-
-  gyro.getSensor(&sensor);
-  Serial.println(F("------------- GYROSCOPE -----------"));
-  Serial.print  (F("Sensor:       ")); Serial.println(sensor.name);
-  Serial.print  (F("Driver Ver:   ")); Serial.println(sensor.version);
-  Serial.print  (F("Unique ID:    ")); Serial.println(sensor.sensor_id);
-  Serial.print  (F("Max Value:    ")); Serial.print(sensor.max_value); Serial.println(F(" rad/s"));
-  Serial.print  (F("Min Value:    ")); Serial.print(sensor.min_value); Serial.println(F(" rad/s"));
-  Serial.print  (F("Resolution:   ")); Serial.print(sensor.resolution); Serial.println(F(" rad/s"));
-  Serial.println(F("------------------------------------"));
-  Serial.println(F(""));
-
-  mag.getSensor(&sensor);
-  Serial.println(F("----------- MAGNETOMETER -----------"));
-  Serial.print  (F("Sensor:       ")); Serial.println(sensor.name);
-  Serial.print  (F("Driver Ver:   ")); Serial.println(sensor.version);
-  Serial.print  (F("Unique ID:    ")); Serial.println(sensor.sensor_id);
-  Serial.print  (F("Max Value:    ")); Serial.print(sensor.max_value); Serial.println(F(" uT"));
-  Serial.print  (F("Min Value:    ")); Serial.print(sensor.min_value); Serial.println(F(" uT"));
-  Serial.print  (F("Resolution:   ")); Serial.print(sensor.resolution); Serial.println(F(" uT"));
-  Serial.println(F("------------------------------------"));
-  Serial.println(F(""));
-
-  delay(100);
 }
