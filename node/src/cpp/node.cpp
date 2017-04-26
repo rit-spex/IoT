@@ -1,10 +1,16 @@
 #include <./headers/node.h>
 #include <ArduinoJson.h>
+
 #define SerialDebug true
 
-JsonObject& getFullObject(DynamicJsonBuffer);
-JsonObject& getGpsJson(DynamicJsonBuffer);
-JsonObject& getBMEJson(DynamicJsonBuffer jBuffer);
+JsonObject& getFullObject(DynamicJsonBuffer&);
+JsonObject& getGpsJson(DynamicJsonBuffer&);
+JsonObject& getBMEJson(DynamicJsonBuffer& );
+JsonObject& getIMUJson(DynamicJsonBuffer&);
+JsonObject& getColorJson(DynamicJsonBuffer&);
+uint16_t getUUID();
+
+using namespace std;
 
 Adafruit_LSM303_Accel_Unified accel = Adafruit_LSM303_Accel_Unified(30301);
 Adafruit_LSM303_Mag_Unified   mag   = Adafruit_LSM303_Mag_Unified(30302);
@@ -27,7 +33,6 @@ void setup(void)
   setupColorSensor(tcs, SerialDebug);
   setupBarometer(bme, SerialDebug);
   setupGPS(GPS, SerialDebug);
-  setupLoRa(LoRa);
 }
 
 void loop(void)
@@ -42,10 +47,7 @@ void loop(void)
   tcs.getRawData(&r, &g, &b, &c);
   lux = tcs.calculateLux(r, g, b);
 
-  bme.readTemperature();
-  bme.readPressure();
-  bme.readAltitude(SEALEVELPRESSURE_HPA);
-  bme.readHumidity();
+
 
   char gpsString = GPS.read();
   if (GPSECHO && SerialDebug)
@@ -64,7 +66,7 @@ void loop(void)
     }
   }
 
-  if (SerialDebug)
+
   {
 
     // prettyPrintAccelerometerData(accel, event);
@@ -80,21 +82,32 @@ void loop(void)
 
   sendDataViaLoRa(LoRa);
   */
+  bme.readTemperature();
+  bme.readPressure();
+  bme.readAltitude(SEALEVELPRESSURE_HPA);
+  bme.readHumidity();
   DynamicJsonBuffer jsonBuffer;
 
-  getFullObject(jsonBuffer).prettyPrintTo(Serial);
+  //char buffer[512];
+  String buffer;
+  getFullObject(jsonBuffer).printTo(buffer);
+  LoRa.send((uint8_t*) buffer.c_str(), buffer.length());
+  Serial.println(buffer);
   delay(1000);
 }
 
-JsonObject& getFullObject(DynamicJsonBuffer jBuffer){
+JsonObject& getFullObject(DynamicJsonBuffer& jBuffer){
   JsonObject& root = jBuffer.createObject();
 
+  root.set("UUID", getUUID());
   root.set("GPS", getGpsJson(jBuffer));
   root.set("BME280", getBMEJson(jBuffer));
+  root.set("IMU", getIMUJson(jBuffer));
+  root.set("Color", getColorJson(jBuffer));
   return root;
 }
 
-JsonObject& getGpsJson(DynamicJsonBuffer jBuffer){
+JsonObject& getGpsJson(DynamicJsonBuffer& jBuffer){
     JsonObject& gpsObject = jBuffer.createObject();
 
     gpsObject["lat"] = GPS.lat;
@@ -109,7 +122,11 @@ JsonObject& getGpsJson(DynamicJsonBuffer jBuffer){
     return gpsObject;
 }
 
-JsonObject& getBMEJson(DynamicJsonBuffer jBuffer){
+uint16_t getUUID() {
+    return 1337;
+}
+
+JsonObject& getBMEJson(DynamicJsonBuffer& jBuffer){
     JsonObject& bmeObject = jBuffer.createObject();
 
     bmeObject["tempc"] = bme.readTemperature();
@@ -118,6 +135,48 @@ JsonObject& getBMEJson(DynamicJsonBuffer jBuffer){
     bmeObject["hum"] = bme.readHumidity();
 
     return bmeObject;
+}
+
+JsonObject& getIMUJson(DynamicJsonBuffer& jBuffer){
+    JsonObject& imuObject = jBuffer.createObject();
+
+    sensors_event_t event;
+    accel.getEvent(&event);
+    gyro.getEvent(&event);
+    mag.getEvent(&event);
+
+    imuObject["ax"] = event.acceleration.x;
+    imuObject["ay"] = event.acceleration.y;
+    imuObject["az"] = event.acceleration.z;
+
+    imuObject["mx"] = event.magnetic.x;
+    imuObject["my"] = event.magnetic.y;
+    imuObject["mz"] = event.magnetic.z;
+
+    imuObject["gx"] = event.gyro.x;
+    imuObject["gy"] = event.gyro.y;
+    imuObject["gz"] = event.gyro.z;
+
+    return imuObject;
+}
+
+JsonObject& getColorJson(DynamicJsonBuffer& jBuffer) {
+    JsonObject& colorObject = jBuffer.createObject();
+
+    uint16_t r, g, b, c, colorTemp, lux;
+
+    tcs.getRawData(&r, &g, &b, &c);
+    colorTemp = tcs.calculateColorTemperature(r, g, b);
+    lux = tcs.calculateLux(r, g, b);
+
+    colorObject["temp"] = colorTemp;
+    colorObject["lux"] = lux;
+    colorObject["r"] = r;
+    colorObject["g"] = g;
+    colorObject["b"] = b;
+    colorObject["c"] = c;
+
+    return colorObject;
 }
 
 void setupSerial(void)
@@ -198,7 +257,7 @@ bool setupBarometer(Adafruit_BME280& bme, bool debug)
 
 bool setupGPS(Adafruit_GPS& GPS, bool debug)
 {
-  GPS.begin(9600);
+  GPS.begin(115200);
   GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
   GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
   GPS.sendCommand(PGCMD_ANTENNA);
