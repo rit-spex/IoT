@@ -2,6 +2,7 @@
 #include <ArduinoJson.h>
 
 #define SerialDebug true
+#define UPDATE_DELAY 1000
 
 JsonObject& getFullObject(DynamicJsonBuffer&);
 JsonObject& getGpsJson(DynamicJsonBuffer&);
@@ -33,6 +34,7 @@ void setup(void)
   setupColorSensor(tcs, SerialDebug);
   setupBarometer(bme, SerialDebug);
   setupGPS(GPS, SerialDebug);
+  setupLoRa(LoRa);
 }
 
 void loop(void)
@@ -82,18 +84,20 @@ void loop(void)
 
   sendDataViaLoRa(LoRa);
   */
+  /*
   bme.readTemperature();
   bme.readPressure();
   bme.readAltitude(SEALEVELPRESSURE_HPA);
   bme.readHumidity();
+  */
   DynamicJsonBuffer jsonBuffer;
 
   //char buffer[512];
   String buffer;
   getFullObject(jsonBuffer).printTo(buffer);
   LoRa.send((uint8_t*) buffer.c_str(), buffer.length());
-  Serial.println(buffer);
-  delay(1000);
+  if (SerialDebug) Serial.println(buffer);
+  delay(UPDATE_DELAY);
 }
 
 JsonObject& getFullObject(DynamicJsonBuffer& jBuffer){
