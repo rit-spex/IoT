@@ -2,13 +2,16 @@
 #include <ArduinoJson.h>
 
 #define SerialDebug true
-#define UPDATE_DELAY 1000
+#define UPDATE_DELAY 1
 
 JsonObject& getFullObject(DynamicJsonBuffer&);
 JsonObject& getGpsJson(DynamicJsonBuffer&);
 JsonObject& getBMEJson(DynamicJsonBuffer& );
 JsonObject& getIMUJson(DynamicJsonBuffer&);
 JsonObject& getColorJson(DynamicJsonBuffer&);
+String getDataString();
+String getUUIDString();
+String getIMUString();
 uint16_t getUUID();
 
 using namespace std;
@@ -90,11 +93,11 @@ void loop(void)
   bme.readAltitude(SEALEVELPRESSURE_HPA);
   bme.readHumidity();
   */
-  DynamicJsonBuffer jsonBuffer;
+//  DynamicJsonBuffer jsonBuffer;
 
   //char buffer[512];
-  String buffer;
-  getFullObject(jsonBuffer).printTo(buffer);
+  String buffer = getDataString();
+//  getFullObject(jsonBuffer).printTo(buffer);
   LoRa.send((uint8_t*) buffer.c_str(), buffer.length());
   if (SerialDebug) Serial.println(buffer);
   delay(UPDATE_DELAY);
@@ -109,6 +112,17 @@ JsonObject& getFullObject(DynamicJsonBuffer& jBuffer){
   root.set("IMU", getIMUJson(jBuffer));
   root.set("Color", getColorJson(jBuffer));
   return root;
+}
+
+String getDataString(){
+  String buffer;
+  buffer += "{";
+  buffer += getUUIDString();
+//  buffer += getGPSString();
+//  buffer += getBMEString();
+  buffer += getIMUString();
+  buffer += "}";
+  return buffer;
 }
 
 JsonObject& getGpsJson(DynamicJsonBuffer& jBuffer){
@@ -128,6 +142,13 @@ JsonObject& getGpsJson(DynamicJsonBuffer& jBuffer){
 
 uint16_t getUUID() {
     return 1337;
+}
+
+String getUUIDString() {
+  String buffer;
+  buffer += "\"UUID\":";
+  buffer += "1337,";
+  return buffer;
 }
 
 JsonObject& getBMEJson(DynamicJsonBuffer& jBuffer){
@@ -162,6 +183,33 @@ JsonObject& getIMUJson(DynamicJsonBuffer& jBuffer){
     imuObject["gz"] = event.gyro.z;
 
     return imuObject;
+}
+
+String getIMUString(){
+  String buffer;
+  buffer += "\"IMU\":{";
+
+  sensors_event_t event;
+  accel.getEvent(&event);
+  gyro.getEvent(&event);
+  mag.getEvent(&event);
+
+  buffer += "\"ax\":"; buffer += String(event.acceleration.x); buffer += ",";
+  buffer += "\"ay\":"; buffer += String(event.acceleration.y); buffer += ",";
+  buffer += "\"az\":"; buffer += String(event.acceleration.z); buffer += ",";
+
+  /*
+  imuObject["mx"] = event.magnetic.x;
+  imuObject["my"] = event.magnetic.y;
+  imuObject["mz"] = event.magnetic.z;
+
+  imuObject["gx"] = event.gyro.x;
+  imuObject["gy"] = event.gyro.y;
+  imuObject["gz"] = event.gyro.z;
+  */
+  buffer += "},";
+
+  return buffer;
 }
 
 JsonObject& getColorJson(DynamicJsonBuffer& jBuffer) {
