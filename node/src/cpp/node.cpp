@@ -11,6 +11,11 @@ String getDataString();
 String getUUIDString();
 String getIMUString();
 String getBMEString();
+String getGPSString();
+String keyString(String key);
+String valueString(String val);
+String kvString(String key, String val);
+
 uint16_t getUUID();
 
 using namespace std;
@@ -102,6 +107,18 @@ void loop(void)
   delay(UPDATE_DELAY);
 }
 
+String kvString(String key, String val){
+    return keyString(key) + valueString(val);
+}
+
+String keyString(String key){
+    return String("\"" + key + "\":");
+}
+
+String valueString(String val){
+    return String(String(val) + ",");
+}
+
 String getDataString(){
   String buffer;
   buffer += "{";
@@ -110,23 +127,40 @@ String getDataString(){
 //  buffer += getBMEString();
   buffer += getIMUString();
   buffer += getBMEString();
+  buffer += getGPSString();
   buffer += "}";
   return buffer;
 }
 
-JsonObject& getGpsJson(DynamicJsonBuffer& jBuffer){
-    JsonObject& gpsObject = jBuffer.createObject();
+String getGPSString(){
+    String buffer;
 
-    gpsObject["lat"] = GPS.lat;
-    gpsObject["latitude"] = GPS.latitude;
-    gpsObject["lon"] = GPS.lon;
-    gpsObject["longitude"] = GPS.longitude;
-    gpsObject["speed"] = GPS.speed;
-    gpsObject["angle"] = GPS.angle;
-    gpsObject["alt"] = GPS.altitude;
-    gpsObject["sats"] = GPS.satellites;
+    buffer += "\"GPS\":{";
 
-    return gpsObject;
+    buffer += kvString("lat", String(GPS.lat));
+    buffer += kvString("lon", String(GPS.lon));
+    buffer += kvString("speed", String(GPS.speed));
+    buffer += kvString("angle", String(GPS.angle));
+    buffer += kvString("alt", String(GPS.altitude));
+    buffer += kvString("sats", String(GPS.satellites));
+    buffer += kvString("latidudeeeee", String(GPS.latitude));
+    buffer += kvString("longidudeeeee", String(GPS.longitude));
+
+    buffer += "},";
+
+    return buffer;
+    //JsonObject& gpsObject = jBuffer.createObject();
+
+    //gpsObject["lat"] = GPS.lat;
+    //gpsObject["latitude"] = GPS.latitude;
+    //gpsObject["lon"] = GPS.lon;
+    //gpsObject["longitude"] = GPS.longitude;
+    //gpsObject["speed"] = GPS.speed;
+    //gpsObject["angle"] = GPS.angle;
+    //gpsObject["alt"] = GPS.altitude;
+    //gpsObject["sats"] = GPS.satellites;
+
+    //return gpsObject;
 }
 
 uint16_t getUUID() {
