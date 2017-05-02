@@ -4,14 +4,13 @@
 #define SerialDebug true
 #define UPDATE_DELAY 1
 
-JsonObject& getFullObject(DynamicJsonBuffer&);
 JsonObject& getGpsJson(DynamicJsonBuffer&);
-JsonObject& getBMEJson(DynamicJsonBuffer& );
 JsonObject& getIMUJson(DynamicJsonBuffer&);
 JsonObject& getColorJson(DynamicJsonBuffer&);
 String getDataString();
 String getUUIDString();
 String getIMUString();
+String getBMEString();
 uint16_t getUUID();
 
 using namespace std;
@@ -103,17 +102,6 @@ void loop(void)
   delay(UPDATE_DELAY);
 }
 
-JsonObject& getFullObject(DynamicJsonBuffer& jBuffer){
-  JsonObject& root = jBuffer.createObject();
-
-  root.set("UUID", getUUID());
-  root.set("GPS", getGpsJson(jBuffer));
-  root.set("BME280", getBMEJson(jBuffer));
-  root.set("IMU", getIMUJson(jBuffer));
-  root.set("Color", getColorJson(jBuffer));
-  return root;
-}
-
 String getDataString(){
   String buffer;
   buffer += "{";
@@ -121,6 +109,7 @@ String getDataString(){
 //  buffer += getGPSString();
 //  buffer += getBMEString();
   buffer += getIMUString();
+  buffer += getBMEString();
   buffer += "}";
   return buffer;
 }
@@ -151,15 +140,26 @@ String getUUIDString() {
   return buffer;
 }
 
-JsonObject& getBMEJson(DynamicJsonBuffer& jBuffer){
-    JsonObject& bmeObject = jBuffer.createObject();
+String getBMEString(){
+    String buffer;
+    buffer += "\"BME\":{";
 
-    bmeObject["tempc"] = bme.readTemperature();
-    bmeObject["pres"] = bme.readPressure();
-    bmeObject["alt"] = bme.readAltitude(SEALEVELPRESSURE_HPA);
-    bmeObject["hum"] = bme.readHumidity();
+    buffer += "\"tempc\":"; buffer += String(bme.readTemperature()); buffer += ",";
+    buffer += "\"pres\":"; buffer += String(bme.readPressure()); buffer += ",";
+    buffer += "\"alt\":"; buffer += String(bme.readAltitude(SEALEVELPRESSURE_HPA)); buffer += ",";
+    buffer += "\"hum\":"; buffer += String(bme.readHumidity()); buffer += ",";
 
-    return bmeObject;
+    buffer += "},";
+
+    return buffer;
+    //JsonObject& bmeObject = jBuffer.createObject();
+
+    //bmeObject["tempc"] = bme.readTemperature();
+    //bmeObject["pres"] = bme.readPressure();
+    //bmeObject["alt"] = bme.readAltitude(SEALEVELPRESSURE_HPA);
+    //bmeObject["hum"] = bme.readHumidity();
+
+    //return bmeObject;
 }
 
 JsonObject& getIMUJson(DynamicJsonBuffer& jBuffer){
@@ -198,6 +198,13 @@ String getIMUString(){
   buffer += "\"ay\":"; buffer += String(event.acceleration.y); buffer += ",";
   buffer += "\"az\":"; buffer += String(event.acceleration.z); buffer += ",";
 
+  buffer += "\"mx\""; buffer += String(event.magnetic.x); buffer += ",";
+  buffer += "\"my\""; buffer += String(event.magnetic.y); buffer += ",";
+  buffer += "\"mz\""; buffer += String(event.magnetic.z); buffer += ",";
+
+  buffer += "\"gx\""; buffer += String(event.gyro.z); buffer += ",";
+  buffer += "\"gy\""; buffer += String(event.gyro.z); buffer += ",";
+  buffer += "\"gz\""; buffer += String(event.gyro.z); buffer += ",";
   /*
   imuObject["mx"] = event.magnetic.x;
   imuObject["my"] = event.magnetic.y;
