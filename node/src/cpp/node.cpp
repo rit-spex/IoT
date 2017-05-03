@@ -1,17 +1,14 @@
 #include <./headers/node.h>
-#include <ArduinoJson.h>
 
-#define SerialDebug true
-#define UPDATE_DELAY 1
+#define SerialDebug false
+#define UPDATE_DELAY 1000
 
-JsonObject& getGpsJson(DynamicJsonBuffer&);
-JsonObject& getIMUJson(DynamicJsonBuffer&);
-JsonObject& getColorJson(DynamicJsonBuffer&);
 String getDataString();
 String getUUIDString();
 String getIMUString();
 String getBMEString();
 String getGPSString();
+String outgoingMsg(String msg);
 String keyString(String key);
 String valueString(String val);
 String kvString(String key, String val);
@@ -73,7 +70,7 @@ void loop(void)
     {
       return;
     }
-  }
+ }
 
 
   {
@@ -100,11 +97,27 @@ void loop(void)
 //  DynamicJsonBuffer jsonBuffer;
 
   //char buffer[512];
-  String buffer = getDataString();
+  //String buffer = getDataString();
 //  getFullObject(jsonBuffer).printTo(buffer);
-  LoRa.send((uint8_t*) buffer.c_str(), buffer.length());
-  if (SerialDebug) Serial.println(buffer);
+  //LoRa.send((uint8_t*) buffer.c_str(), buffer.length());
+  //if (SerialDebug) Serial.println(buffer);
+  String bmeBuffer = outgoingMsg(getBMEString());
+  String imuBuffer = outgoingMsg(getIMUString());
+  String gpsBuffer = outgoingMsg(getGPSString());
+
+  LoRa.send((uint8_t*) bmeBuffer.c_str(), bmeBuffer.length());
+  LoRa.send((uint8_t*) imuBuffer.c_str(), imuBuffer.length());
+  LoRa.send((uint8_t*) gpsBuffer.c_str(), gpsBuffer.length());
   delay(UPDATE_DELAY);
+}
+
+String outgoingMsg(String msg)
+{
+    String buffer = "\{" + getUUIDString();
+    buffer += msg;
+    buffer += "}";
+
+    return buffer;
 }
 
 String kvString(String key, String val){
@@ -127,7 +140,7 @@ String getDataString(){
 //  buffer += getBMEString();
   buffer += getIMUString();
   buffer += getBMEString();
-  buffer += getGPSString();
+  //buffer += getGPSString();
   buffer += "}";
   return buffer;
 }
@@ -143,8 +156,8 @@ String getGPSString(){
     buffer += kvString("angle", String(GPS.angle));
     buffer += kvString("alt", String(GPS.altitude));
     buffer += kvString("sats", String(GPS.satellites));
-    buffer += kvString("latidudeeeee", String(GPS.latitude));
-    buffer += kvString("longidudeeeee", String(GPS.longitude));
+    buffer += kvString("latitude", String(GPS.latitude));
+    buffer += kvString("longitude", String(GPS.longitude));
 
     buffer += "},";
 
@@ -196,29 +209,6 @@ String getBMEString(){
     //return bmeObject;
 }
 
-JsonObject& getIMUJson(DynamicJsonBuffer& jBuffer){
-    JsonObject& imuObject = jBuffer.createObject();
-
-    sensors_event_t event;
-    accel.getEvent(&event);
-    gyro.getEvent(&event);
-    mag.getEvent(&event);
-
-    imuObject["ax"] = event.acceleration.x;
-    imuObject["ay"] = event.acceleration.y;
-    imuObject["az"] = event.acceleration.z;
-
-    imuObject["mx"] = event.magnetic.x;
-    imuObject["my"] = event.magnetic.y;
-    imuObject["mz"] = event.magnetic.z;
-
-    imuObject["gx"] = event.gyro.x;
-    imuObject["gy"] = event.gyro.y;
-    imuObject["gz"] = event.gyro.z;
-
-    return imuObject;
-}
-
 String getIMUString(){
   String buffer;
   buffer += "\"IMU\":{";
@@ -251,25 +241,6 @@ String getIMUString(){
   buffer += "},";
 
   return buffer;
-}
-
-JsonObject& getColorJson(DynamicJsonBuffer& jBuffer) {
-    JsonObject& colorObject = jBuffer.createObject();
-
-    uint16_t r, g, b, c, colorTemp, lux;
-
-    tcs.getRawData(&r, &g, &b, &c);
-    colorTemp = tcs.calculateColorTemperature(r, g, b);
-    lux = tcs.calculateLux(r, g, b);
-
-    colorObject["temp"] = colorTemp;
-    colorObject["lux"] = lux;
-    colorObject["r"] = r;
-    colorObject["g"] = g;
-    colorObject["b"] = b;
-    colorObject["c"] = c;
-
-    return colorObject;
 }
 
 void setupSerial(void)
@@ -379,6 +350,7 @@ bool setupLoRa(RH_RF95& LoRa)
   {
     while (1);
   }
+  LoRa.setModemConfig(RH_RF95::ModemConfigChoice::Bw500Cr45Sf128);
   LoRa.setTxPower(23, false);
 }
 
