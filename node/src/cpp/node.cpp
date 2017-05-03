@@ -8,6 +8,7 @@ String getUUIDString();
 String getIMUString();
 String getBMEString();
 String getGPSString();
+String getColorString();
 String outgoingMsg(String msg);
 String keyString(String key);
 String valueString(String val);
@@ -104,10 +105,17 @@ void loop(void)
   String bmeBuffer = outgoingMsg(getBMEString());
   String imuBuffer = outgoingMsg(getIMUString());
   String gpsBuffer = outgoingMsg(getGPSString());
+  String colBuffer = outgoingMsg(getColorString());
+
+  Serial.println(bmeBuffer);
+  Serial.println(imuBuffer);
+  Serial.println(gpsBuffer);
+  Serial.println(colBuffer);
 
   LoRa.send((uint8_t*) bmeBuffer.c_str(), bmeBuffer.length());
   LoRa.send((uint8_t*) imuBuffer.c_str(), imuBuffer.length());
   LoRa.send((uint8_t*) gpsBuffer.c_str(), gpsBuffer.length());
+  LoRa.send((uint8_t*) colBuffer.c_str(), colBuffer.length());
   delay(UPDATE_DELAY);
 }
 
@@ -143,6 +151,28 @@ String getDataString(){
   //buffer += getGPSString();
   buffer += "}";
   return buffer;
+}
+
+String getColorString()
+{
+    String buffer;
+    uint16_t r, g, b, c, colorTemp, lux;
+    tcs.getRawData(&r, &g, &b, &c);
+    colorTemp = tcs.calculateColorTemperature(r, g, b);
+    lux = tcs.calculateLux(r, g, b);
+
+    buffer += "\"Color\":{";
+
+    buffer += kvString("temp", String(colorTemp));
+    buffer += kvString("lux", String(lux));
+    buffer += kvString("r", String(r));
+    buffer += kvString("g", String(g));
+    buffer += kvString("b", String(b));
+    buffer += kvString("c", String(c));
+
+    buffer += "}";
+
+    return buffer;
 }
 
 String getGPSString(){
