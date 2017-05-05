@@ -65,13 +65,15 @@ def workThroughQueue():
   while True:
       if len(serialQueue) > 0:
           threading.Thread(target=processSerial, args=(serialQueue.popleft(),)).run()
-      
+
 ser = serial.Serial(SERIAL_PORT, 115200, timeout=0)
 #sio = io.TextIOWrapper(io.BufferedRWPair(ser, ser))
 serialQueue = deque([])
-threading.Thread(target=workThroughQueue).start()
+#threading.Thread(target=workThroughQueue).start()
 while True:
     #hello = sio.readline()
     hello = ser.readline()
     if hello != '':
        serialQueue.append(hello)
+    while len(serialQueue) > 0:
+      threading.Thread(target=processSerial, args=(serialQueue.popleft(),)).run()
