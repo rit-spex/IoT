@@ -28,7 +28,7 @@ void setup()
   Serial.begin(115200);
   delay(100);
 
-  Serial.println("Feather LoRa Gateway Node");
+  // Serial.println("Feather LoRa Gateway Node");
 
   // manual reset
   digitalWrite(RFM95_RST, LOW);

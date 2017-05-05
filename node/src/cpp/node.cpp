@@ -99,12 +99,12 @@ String getColorString()
 
     buffer += "\"hasColor\": true, ";
 
-    buffer += kvString("temp", String(colorTemp));
+    buffer += kvString("colorTemp", String(colorTemp));
     buffer += kvString("lux", String(lux));
-    buffer += kvString("r", String(r));
-    buffer += kvString("g", String(g));
-    buffer += kvString("b", String(b));
-    buffer += kvString("c", String(c));
+    buffer += kvString("colorR", String(r));
+    buffer += kvString("colorG", String(g));
+    buffer += kvString("colorB", String(b));
+    buffer += "\"clear\":"; buffer += String(c);
 
     return buffer;
 }
@@ -121,9 +121,7 @@ String getGPSString(){
     buffer += kvString("alt", String(GPS.altitude));
     buffer += kvString("sats", String(GPS.satellites));
     buffer += kvString("latitude", String(GPS.latitude));
-    buffer += kvString("longitude", String(GPS.longitude));
-
-    buffer += "},";
+    buffer += "\"longitude\":"; buffer += String(GPS.longitude);
 
     return buffer;
 }
@@ -141,10 +139,10 @@ String getBMEString(){
     String buffer;
     buffer += "\"hasBarometer\": true, ";
 
-    buffer += "\"tempc\":"; buffer += String(bme.readTemperature()); buffer += ",";
-    buffer += "\"pres\":"; buffer += String(bme.readPressure()); buffer += ",";
-    buffer += "\"alt\":"; buffer += String(bme.readAltitude(SEALEVELPRESSURE_HPA)); buffer += ",";
-    buffer += "\"hum\":"; buffer += String(bme.readHumidity()); buffer += ",";
+    buffer += "\"temp!\":"; buffer += String(bme.readTemperature()); buffer += ",";
+    buffer += "\"pressure\":"; buffer += String(bme.readPressure()); buffer += ",";
+    buffer += "\"altitude\":"; buffer += String(bme.readAltitude(SEALEVELPRESSURE_HPA)); buffer += ",";
+    buffer += "\"humidity\":"; buffer += String(bme.readHumidity());
 
     return buffer;
 }
@@ -168,7 +166,7 @@ String getIMUString(){
 
   buffer += "\"gyroX\":"; buffer += String(event.gyro.z); buffer += ",";
   buffer += "\"gyroY\":"; buffer += String(event.gyro.z); buffer += ",";
-  buffer += "\"gyroZ\":"; buffer += String(event.gyro.z); buffer += ",";
+  buffer += "\"gyroZ\":"; buffer += String(event.gyro.z);
 
   return buffer;
 }
