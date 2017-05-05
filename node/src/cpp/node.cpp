@@ -1,7 +1,7 @@
 #include <./headers/node.h>
 
-#define SerialDebug true
-#define UPDATE_DELAY 10
+#define SerialDebug false
+#define UPDATE_DELAY 15
 #define NODE_UUID "ImagineSensor1"
 
 String getDataString();
@@ -30,6 +30,7 @@ Adafruit_BME280 bme; // I2C
 Adafruit_GPS GPS = Adafruit_GPS(&GPSSerial);
 
 RH_RF95 LoRa(RFM95_CS, RFM95_INT);
+uint8_t transmitPause = UPDATE_DELAY / 4 ;
 
 void setup(void)
 {
@@ -57,10 +58,14 @@ if (SerialDebug) {
   Serial.println(colBuffer);
 }
   LoRa.send((uint8_t*) bmeBuffer.c_str(), bmeBuffer.length());
+  delay(transmitPause);
   LoRa.send((uint8_t*) imuBuffer.c_str(), imuBuffer.length());
+  delay(transmitPause * 2);
   // LoRa.send((uint8_t*) gpsBuffer.c_str(), gpsBuffer.length());
+  //delay(transmitPause);
   LoRa.send((uint8_t*) colBuffer.c_str(), colBuffer.length());
-  delay(UPDATE_DELAY);
+  delay(transmitPause);
+  //delay(UPDATE_DELAY);
 }
 
 String outgoingMsg(String msg)
