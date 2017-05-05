@@ -1,7 +1,8 @@
 #include <./headers/node.h>
 
 #define SerialDebug false
-#define UPDATE_DELAY 1000
+#define UPDATE_DELAY 15
+#define NODE_UUID "ImagineSensor1"
 
 String getDataString();
 String getUUIDString();
@@ -22,13 +23,14 @@ Adafruit_LSM303_Accel_Unified accel = Adafruit_LSM303_Accel_Unified(30301);
 Adafruit_LSM303_Mag_Unified   mag   = Adafruit_LSM303_Mag_Unified(30302);
 Adafruit_L3GD20_Unified       gyro  = Adafruit_L3GD20_Unified(20);
 
-Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_700MS, TCS34725_GAIN_1X);
+Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_2_4MS, TCS34725_GAIN_1X);
 
 Adafruit_BME280 bme; // I2C
 
 Adafruit_GPS GPS = Adafruit_GPS(&GPSSerial);
 
 RH_RF95 LoRa(RFM95_CS, RFM95_INT);
+uint8_t transmitPause = UPDATE_DELAY / 4 ;
 
 void setup(void)
 {
@@ -44,79 +46,26 @@ void setup(void)
 
 void loop(void)
 {
-  /*
-  sensors_event_t event;
-  accel.getEvent(&event);
-  mag.getEvent(&event);
-  gyro.getEvent(&event);
-
-  uint16_t r, g, b, c, colorTemp, lux;
-  tcs.getRawData(&r, &g, &b, &c);
-  lux = tcs.calculateLux(r, g, b);
-
-
-
-  char gpsString = GPS.read();
-  if (GPSECHO && SerialDebug)
-  {
-    if (gpsString) Serial.print(c);
-  }
-  if (GPS.newNMEAreceived())
-  {
-    if (SerialDebug)
-    {
-      Serial.println(GPS.lastNMEA());
-    }
-    if (!GPS.parse(GPS.lastNMEA()))
-    {
-      return;
-    }
- }
-
-
-  {
-
-    // prettyPrintAccelerometerData(accel, event);
-    // prettyPrintMagnetometerData(mag, event);
-    // prettyPrintGyroscopeData(gyro, event);
-    // prettyPrintColorSensorData(tcs);
-    // prettyPrintBarometerData(bme);
-    Serial.println("=====================");
-    prettyPrintGPSData(GPS);
-    Serial.println();
-  }
-
-
-  sendDataViaLoRa(LoRa);
-  */
-  /*
-  bme.readTemperature();
-  bme.readPressure();
-  bme.readAltitude(SEALEVELPRESSURE_HPA);
-  bme.readHumidity();
-  */
-//  DynamicJsonBuffer jsonBuffer;
-
-  //char buffer[512];
-  //String buffer = getDataString();
-//  getFullObject(jsonBuffer).printTo(buffer);
-  //LoRa.send((uint8_t*) buffer.c_str(), buffer.length());
-  //if (SerialDebug) Serial.println(buffer);
   String bmeBuffer = outgoingMsg(getBMEString());
   String imuBuffer = outgoingMsg(getIMUString());
   String gpsBuffer = outgoingMsg(getGPSString());
   String colBuffer = outgoingMsg(getColorString());
 
+if (SerialDebug) {
   Serial.println(bmeBuffer);
   Serial.println(imuBuffer);
   Serial.println(gpsBuffer);
   Serial.println(colBuffer);
-
+}
   LoRa.send((uint8_t*) bmeBuffer.c_str(), bmeBuffer.length());
+  delay(transmitPause);
   LoRa.send((uint8_t*) imuBuffer.c_str(), imuBuffer.length());
-  LoRa.send((uint8_t*) gpsBuffer.c_str(), gpsBuffer.length());
+  delay(transmitPause * 2);
+  // LoRa.send((uint8_t*) gpsBuffer.c_str(), gpsBuffer.length());
+  //delay(transmitPause);
   LoRa.send((uint8_t*) colBuffer.c_str(), colBuffer.length());
-  delay(UPDATE_DELAY);
+  delay(transmitPause);
+  //delay(UPDATE_DELAY);
 }
 
 String outgoingMsg(String msg)
@@ -140,19 +89,6 @@ String valueString(String val){
     return String(String(val) + ",");
 }
 
-String getDataString(){
-  String buffer;
-  buffer += "{";
-  buffer += getUUIDString();
-//  buffer += getGPSString();
-//  buffer += getBMEString();
-  buffer += getIMUString();
-  buffer += getBMEString();
-  //buffer += getGPSString();
-  buffer += "}";
-  return buffer;
-}
-
 String getColorString()
 {
     String buffer;
@@ -161,16 +97,14 @@ String getColorString()
     colorTemp = tcs.calculateColorTemperature(r, g, b);
     lux = tcs.calculateLux(r, g, b);
 
-    buffer += "\"Color\":{";
+    buffer += "\"hasColor\": true, ";
 
-    buffer += kvString("temp", String(colorTemp));
+    buffer += kvString("colorTemp", String(colorTemp));
     buffer += kvString("lux", String(lux));
-    buffer += kvString("r", String(r));
-    buffer += kvString("g", String(g));
-    buffer += kvString("b", String(b));
-    buffer += kvString("c", String(c));
-
-    buffer += "}";
+    buffer += kvString("colorR", String(r));
+    buffer += kvString("colorG", String(g));
+    buffer += kvString("colorB", String(b));
+    buffer += "\"clear\":"; buffer += String(c);
 
     return buffer;
 }
@@ -178,7 +112,7 @@ String getColorString()
 String getGPSString(){
     String buffer;
 
-    buffer += "\"GPS\":{";
+    buffer += "\"hasGPS\": true, ";
 
     buffer += kvString("lat", String(GPS.lat));
     buffer += kvString("lon", String(GPS.lon));
@@ -187,88 +121,52 @@ String getGPSString(){
     buffer += kvString("alt", String(GPS.altitude));
     buffer += kvString("sats", String(GPS.satellites));
     buffer += kvString("latitude", String(GPS.latitude));
-    buffer += kvString("longitude", String(GPS.longitude));
-
-    buffer += "},";
+    buffer += "\"longitude\":"; buffer += String(GPS.longitude);
 
     return buffer;
-    //JsonObject& gpsObject = jBuffer.createObject();
-
-    //gpsObject["lat"] = GPS.lat;
-    //gpsObject["latitude"] = GPS.latitude;
-    //gpsObject["lon"] = GPS.lon;
-    //gpsObject["longitude"] = GPS.longitude;
-    //gpsObject["speed"] = GPS.speed;
-    //gpsObject["angle"] = GPS.angle;
-    //gpsObject["alt"] = GPS.altitude;
-    //gpsObject["sats"] = GPS.satellites;
-
-    //return gpsObject;
 }
 
-uint16_t getUUID() {
-    return 1337;
-}
 
 String getUUIDString() {
   String buffer;
-  buffer += "\"UUID\":";
-  buffer += "1337,";
+  buffer += "\"UUID\": \"";
+  buffer += String(NODE_UUID);
+  buffer += "\", " ;
   return buffer;
 }
 
 String getBMEString(){
     String buffer;
-    buffer += "\"BME\":{";
+    buffer += "\"hasBarometer\": true, ";
 
-    buffer += "\"tempc\":"; buffer += String(bme.readTemperature()); buffer += ",";
-    buffer += "\"pres\":"; buffer += String(bme.readPressure()); buffer += ",";
-    buffer += "\"alt\":"; buffer += String(bme.readAltitude(SEALEVELPRESSURE_HPA)); buffer += ",";
-    buffer += "\"hum\":"; buffer += String(bme.readHumidity()); buffer += ",";
-
-    buffer += "},";
+    buffer += "\"temp1\":"; buffer += String(bme.readTemperature()); buffer += ",";
+    buffer += "\"pressure\":"; buffer += String(bme.readPressure()); buffer += ",";
+    buffer += "\"altitude\":"; buffer += String(bme.readAltitude(SEALEVELPRESSURE_HPA)); buffer += ",";
+    buffer += "\"humidity\":"; buffer += String(bme.readHumidity());
 
     return buffer;
-    //JsonObject& bmeObject = jBuffer.createObject();
-
-    //bmeObject["tempc"] = bme.readTemperature();
-    //bmeObject["pres"] = bme.readPressure();
-    //bmeObject["alt"] = bme.readAltitude(SEALEVELPRESSURE_HPA);
-    //bmeObject["hum"] = bme.readHumidity();
-
-    //return bmeObject;
 }
 
 String getIMUString(){
   String buffer;
-  buffer += "\"IMU\":{";
+  buffer += "\"hasIMU\": true, ";
 
   sensors_event_t event;
   accel.getEvent(&event);
   gyro.getEvent(&event);
   mag.getEvent(&event);
 
-  buffer += "\"ax\":"; buffer += String(event.acceleration.x); buffer += ",";
-  buffer += "\"ay\":"; buffer += String(event.acceleration.y); buffer += ",";
-  buffer += "\"az\":"; buffer += String(event.acceleration.z); buffer += ",";
+  buffer += "\"accelX\":"; buffer += String(event.acceleration.x); buffer += ",";
+  buffer += "\"accelY\":"; buffer += String(event.acceleration.y); buffer += ",";
+  buffer += "\"accelZ\":"; buffer += String(event.acceleration.z); buffer += ",";
 
-  buffer += "\"mx\""; buffer += String(event.magnetic.x); buffer += ",";
-  buffer += "\"my\""; buffer += String(event.magnetic.y); buffer += ",";
-  buffer += "\"mz\""; buffer += String(event.magnetic.z); buffer += ",";
+  buffer += "\"magX\":"; buffer += String(event.magnetic.x); buffer += ",";
+  buffer += "\"magY\":"; buffer += String(event.magnetic.y); buffer += ",";
+  buffer += "\"magZ\":"; buffer += String(event.magnetic.z); buffer += ",";
 
-  buffer += "\"gx\""; buffer += String(event.gyro.z); buffer += ",";
-  buffer += "\"gy\""; buffer += String(event.gyro.z); buffer += ",";
-  buffer += "\"gz\""; buffer += String(event.gyro.z); buffer += ",";
-  /*
-  imuObject["mx"] = event.magnetic.x;
-  imuObject["my"] = event.magnetic.y;
-  imuObject["mz"] = event.magnetic.z;
-
-  imuObject["gx"] = event.gyro.x;
-  imuObject["gy"] = event.gyro.y;
-  imuObject["gz"] = event.gyro.z;
-  */
-  buffer += "},";
+  buffer += "\"gyroX\":"; buffer += String(event.gyro.z); buffer += ",";
+  buffer += "\"gyroY\":"; buffer += String(event.gyro.z); buffer += ",";
+  buffer += "\"gyroZ\":"; buffer += String(event.gyro.z);
 
   return buffer;
 }
@@ -382,15 +280,4 @@ bool setupLoRa(RH_RF95& LoRa)
   }
   LoRa.setModemConfig(RH_RF95::ModemConfigChoice::Bw500Cr45Sf128);
   LoRa.setTxPower(23, false);
-}
-
-void sendDataViaLoRa(RH_RF95& LoRa)
-{
-  char radioPacket = *getGPSData(GPS);
-
-  delay(10);
-  LoRa.send((uint8_t *)radioPacket, sizeof(radioPacket));
-
-  delay(10);
-  LoRa.waitPacketSent();
 }
