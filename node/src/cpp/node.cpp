@@ -162,13 +162,13 @@ String getIMUString(){
   buffer += "\"accelY\":"; buffer += String(event.acceleration.y); buffer += ",";
   buffer += "\"accelZ\":"; buffer += String(event.acceleration.z); buffer += ",";
 
-  buffer += "\"magX\""; buffer += String(event.magnetic.x); buffer += ",";
-  buffer += "\"magY\""; buffer += String(event.magnetic.y); buffer += ",";
-  buffer += "\"magZ\""; buffer += String(event.magnetic.z); buffer += ",";
+  buffer += "\"magX\":"; buffer += String(event.magnetic.x); buffer += ",";
+  buffer += "\"magY\":"; buffer += String(event.magnetic.y); buffer += ",";
+  buffer += "\"magZ\":"; buffer += String(event.magnetic.z); buffer += ",";
 
-  buffer += "\"gyroX\""; buffer += String(event.gyro.z); buffer += ",";
-  buffer += "\"gyroY\""; buffer += String(event.gyro.z); buffer += ",";
-  buffer += "\"gyroZ\""; buffer += String(event.gyro.z); buffer += ",";
+  buffer += "\"gyroX\":"; buffer += String(event.gyro.z); buffer += ",";
+  buffer += "\"gyroY\":"; buffer += String(event.gyro.z); buffer += ",";
+  buffer += "\"gyroZ\":"; buffer += String(event.gyro.z); buffer += ",";
 
   return buffer;
 }
