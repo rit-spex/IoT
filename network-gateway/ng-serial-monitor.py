@@ -2,7 +2,11 @@ import serial
 import io
 from datetime import datetime
 import json
+from collections import deque
+from multiprocessing import Pool
+import threading
 from socketIO_client import SocketIO, LoggingNamespace
+
 SERIAL_PORT = 'COM6'
 
 def connectToSocket(socketId):
@@ -28,27 +32,23 @@ def connectToSocket(socketId):
     def sendSocketData(payload):
       socketIO.emit('sensorData', {'dateCreated': '999', 'payload': {'python': 4}, 'name': 'pythonClient2'}, on_response)
 
-ser = serial.Serial(SERIAL_PORT, 115200, timeout=0)
-sio = io.TextIOWrapper(io.BufferedRWPair(ser, ser))
-var = 1
-while True:
-    hello = sio.readline()
-    if hello:
-        print(hello)
-        start = hello.index('{')
-        end = hello.index('}') + 1
+def processSerial(inputString):
+    print(hello)
+    start = hello.find('{')
+    end = hello.find('}') + 1
+    if (start > -1) and (end > -1):
         data = hello[start:end]
         d = json.loads(data)
         print d["UUID"]
 
+ser = serial.Serial(SERIAL_PORT, 115200, timeout=0)
+sio = io.TextIOWrapper(io.BufferedRWPair(ser, ser))
+serialQueue = deque([])
+while True:
+    hello = sio.readline()
+    if hello != '':
+       serialQueue.append(hello)
 
-#var = 1
-#while var == 1:
-#    socketIO.emit('sensorData', {'dateCreated': '999', 'payload': {'python': 6}, 'name': 'pythonClient2'}, on_response)
-#    socketIO.wait_for_callbacks(seconds=1)
-#    print('Sent socket Data')
-#
-#
-
-
-
+    if len(serialQueue) > 0:
+        threading.Thread(target=processSerial, args=(serialQueue.popleft(),)).run()
+        
