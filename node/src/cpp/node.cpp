@@ -123,7 +123,7 @@ String outgoingMsg(String msg)
 {
     String buffer = "\{" + getUUIDString();
     buffer += msg;
-    buffer += "}";
+    buffer += "}\0";
 
     return buffer;
 }
