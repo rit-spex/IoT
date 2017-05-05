@@ -139,7 +139,7 @@ String getBMEString(){
     String buffer;
     buffer += "\"hasBarometer\": true, ";
 
-    buffer += "\"temp!\":"; buffer += String(bme.readTemperature()); buffer += ",";
+    buffer += "\"temp1\":"; buffer += String(bme.readTemperature()); buffer += ",";
     buffer += "\"pressure\":"; buffer += String(bme.readPressure()); buffer += ",";
     buffer += "\"altitude\":"; buffer += String(bme.readAltitude(SEALEVELPRESSURE_HPA)); buffer += ",";
     buffer += "\"humidity\":"; buffer += String(bme.readHumidity());
