@@ -16,6 +16,7 @@ namespace {
   constexpr uint8_t ETX = 0x03;
   constexpr uint8_t ESC = 0xfe;
 }
+
 namespace SensorNode {
 
 FrameWriter::FrameWriter() :
@@ -24,13 +25,13 @@ FrameWriter::FrameWriter() :
 void FrameWriter::sendMsg(uint8_t *vals, uint16_t length) {
   _setUpBuffer(vals, length);
 
-  if(!_isSetup)
+  if(!_isSetUp)
     _setup();
 
   _radio.send(_buffer, _cursor);
 }
 
-void FrameWriter::_setup() {
+bool FrameWriter::_setup() {
   pinMode(RFM95_RST, OUTPUT);
   digitalWrite(RFM95_RST, HIGH);
   delay(100);
@@ -40,15 +41,18 @@ void FrameWriter::_setup() {
   digitalWrite(RFM95_RST, HIGH);
   delay(10);
 
-  while (!_radio.init())
-  {
-    while (1);
-  }
+  if(!_radio.init())
+    return false;
 
   // Defaults after init are 434.0MHz, modulation GFSK_Rb250Fd250, +13dbM
-  _radio.setFrequency(RFM95_FREQ);
-  _radio.setModemConfig(RH_RF95::ModemConfigChoice::Bw500Cr45Sf128);
+  if(!_radio.setFrequency(RFM95_FREQ))
+    return false;
+  if(!_radio.setModemConfig(RH_RF95::ModemConfigChoice::Bw500Cr45Sf128))
+    return false;
   _radio.setTxPower(23, false);
+
+  _isSetUp = true;
+  return true;
 }
 
 void FrameWriter::_setUpBuffer(uint8_t *vals, uint16_t length) {
