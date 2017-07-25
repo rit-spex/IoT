@@ -4,6 +4,8 @@
 
 #include <cstdint>
 
+#define MAX_RAW 125
+#define MAX_BUF 251
 
 namespace SensorNode {
 
@@ -14,16 +16,13 @@ class FrameWriter {
   void sendMsg(std::uint8_t *vals, std::uint16_t length);
 
  private:
-  bool _valNeedsEscape(std::uint8_t val);
-  void _addMessageByte(std::uint8_t val);
-  void _addToBuffer(std::uint8_t val);
-  void _setUpBuffer(std::uint8_t *vals, std::uint16_t length);
+  bool _isSetUp = false;
+  void _slip();
   bool _setup();
 
   RH_RF95 _radio;
-  std::uint8_t _buffer[256] = {0};
-  std::uint16_t _cursor = 0;
-  bool _isSetUp = false;
+  std::uint8_t _raw_buffer[MAX_RAW] = {0};
+  std::uint8_t _msg_buffer[MAX_BUF] = {0};
 };
 
 } // end namespace RH_RF95

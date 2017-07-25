@@ -4,6 +4,9 @@ using std::uint8_t;
 using std::uint16_t;
 
 namespace {
+  // ID
+  constexpr uint8_t ID = 0xde;
+
   // Radio setup, Adafruit LoRa feather
   constexpr uint8_t RFM95_CS = 8;
   constexpr uint8_t RFM95_RST = 4;
@@ -12,9 +15,10 @@ namespace {
 
   // Message constants
   constexpr uint16_t LEN = 256;
-  constexpr uint8_t STX = 0x01;
-  constexpr uint8_t ETX = 0x03;
-  constexpr uint8_t ESC = 0xfe;
+  constexpr uint8_t END     = 0xC0;
+  constexpr uint8_t ESC     = 0xDB;
+  constexpr uint8_t ESC_END = 0xDC;
+  constexpr uint8_t ESC_ESC = 0xDD;
 }
 
 namespace SensorNode {
@@ -22,13 +26,33 @@ namespace SensorNode {
 FrameWriter::FrameWriter() :
     _radio(RH_RF95(RFM95_CS, RFM95_INT)) {}
 
+void FrameWriter::_slip() {
+  uint8_t msg_cursor = 0;
+
+  for(uint8_t raw_cursor = 0; raw_cursor < MAX_RAW; raw_cursor++) {
+    if(_raw_buffer[raw_cursor] == END) {
+      _msg_buffer[msg_cursor] = ESC;
+      msg_cursor++;
+      _msg_buffer[msg_cursor] = ESC_END;
+      msg_cursor++;
+    }
+    else if(_raw_buffer[raw_cursor] == ESC) {
+      _msg_buffer[msg_cursor] = ESC;
+      msg_cursor++;
+      _msg_buffer[msg_cursor] = ESC_ESC;
+      msg_cursor++;
+    }
+    else {
+      _msg_buffer[msg_cursor] = _raw_buffer[raw_cursor];
+      msg_cursor++;
+    }
+  }
+
+  _msg_buffer[msg_cursor] = END;
+}
+
 void FrameWriter::sendMsg(uint8_t *vals, uint16_t length) {
-  _setUpBuffer(vals, length);
-
-  if(!_isSetUp)
-    _setup();
-
-  _radio.send(_buffer, _cursor);
+  _radio.send(_msg_buffer, MAX_BUF);
 }
 
 bool FrameWriter::_setup() {
@@ -47,47 +71,11 @@ bool FrameWriter::_setup() {
   // Defaults after init are 434.0MHz, modulation GFSK_Rb250Fd250, +13dbM
   if(!_radio.setFrequency(RFM95_FREQ))
     return false;
-  if(!_radio.setModemConfig(RH_RF95::ModemConfigChoice::Bw500Cr45Sf128))
+  if(!_radio.setModemConfig(RH_RF95::ModemConfigChoice::Bw125Cr48Sf4096))
     return false;
   _radio.setTxPower(23, false);
 
   _isSetUp = true;
   return true;
 }
-
-void FrameWriter::_setUpBuffer(uint8_t *vals, uint16_t length) {
-  _addToBuffer(STX);
-
-  for(uint16_t i = 0; i < length; i++) {
-    _addMessageByte(vals[i]);
-  }
-
-  _addToBuffer(ETX);
-}
-
-bool FrameWriter::_valNeedsEscape(uint8_t val) {
-  switch(val) {
-    case 0x01:
-    case 0x03:
-    case 0xfe:
-      return true;
-    default:
-      return false;
-  }
-}
-
-void FrameWriter::_addMessageByte(uint8_t val) {
-  if(_valNeedsEscape(val))
-    _addToBuffer(ESC);
-
-  _addToBuffer(val);
-}
-
-void FrameWriter::_addToBuffer(uint8_t val) {
-  if(_cursor < LEN) {
-    _buffer[_cursor] = val;
-    _cursor++;
-  }
-}
-
 }

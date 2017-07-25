@@ -11,8 +11,9 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("sending message");
-  uint8_t msg[] = "hello";
-  frame.sendMsg(msg, sizeof(msg));
+  //Serial.println(frame.maxMsg());
+  //Serial.println("sending message");
+  //std::uint8_t msg[] = "hello";
+  //frame.sendMsg(msg, sizeof(msg));
   delay(1000);
 }
