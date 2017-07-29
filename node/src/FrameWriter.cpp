@@ -26,33 +26,48 @@ namespace SensorNode {
 FrameWriter::FrameWriter() :
     _radio(RH_RF95(RFM95_CS, RFM95_INT)) {}
 
-void FrameWriter::_slip() {
+uint8_t FrameWriter::_slip(uint8_t *vals) {
   uint8_t msg_cursor = 0;
 
   for(uint8_t raw_cursor = 0; raw_cursor < MAX_RAW; raw_cursor++) {
-    if(_raw_buffer[raw_cursor] == END) {
+    if(vals[raw_cursor] == END) {
       _msg_buffer[msg_cursor] = ESC;
       msg_cursor++;
       _msg_buffer[msg_cursor] = ESC_END;
       msg_cursor++;
     }
-    else if(_raw_buffer[raw_cursor] == ESC) {
+    else if(vals[raw_cursor] == ESC) {
       _msg_buffer[msg_cursor] = ESC;
       msg_cursor++;
       _msg_buffer[msg_cursor] = ESC_ESC;
       msg_cursor++;
     }
     else {
-      _msg_buffer[msg_cursor] = _raw_buffer[raw_cursor];
+      _msg_buffer[msg_cursor] = vals[raw_cursor];
       msg_cursor++;
     }
   }
 
   _msg_buffer[msg_cursor] = END;
+  msg_cursor++;
+
+  return msg_cursor;
 }
 
 void FrameWriter::sendMsg(uint8_t *vals, uint16_t length) {
-  _radio.send(_msg_buffer, MAX_BUF);
+  if(length > MAX_RAW)
+    length = MAX_RAW;
+
+  _slip(vals);
+
+
+  _radio.send(_msg_buffer, length);
+  _clearBuffers();
+}
+
+void FrameWriter::_clearBuffers() {
+  for(uint16_t i = 0; i < MAX_BUF; i++)
+    _msg_buffer[i] = 0;
 }
 
 bool FrameWriter::_setup() {
@@ -78,4 +93,5 @@ bool FrameWriter::_setup() {
   _isSetUp = true;
   return true;
 }
+
 }

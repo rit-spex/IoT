@@ -1,4 +1,4 @@
-#pragma once
+ #pragma once
 
 #include <RH_RF95.h>
 
@@ -17,11 +17,11 @@ class FrameWriter {
 
  private:
   bool _isSetUp = false;
-  void _slip();
+  std::uint8_t _slip(std::uint8_t* vals);
   bool _setup();
+  void _clearBuffers();
 
   RH_RF95 _radio;
-  std::uint8_t _raw_buffer[MAX_RAW] = {0};
   std::uint8_t _msg_buffer[MAX_BUF] = {0};
 };
 
