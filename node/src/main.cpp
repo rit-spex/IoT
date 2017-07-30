@@ -9,8 +9,9 @@ SensorNode::FrameWriter frame;
 void setup() {
   Serial.begin(9600);
 }
-
+char* msg = "hello";
 void loop() {
+  frame.sendMsg((uint8_t*)msg, (uint16_t)sizeof(msg));
   //Serial.println(frame.maxMsg());
   //Serial.println("sending message");
   //std::uint8_t msg[] = "hello";
