@@ -16,7 +16,7 @@ class Scanner(object):
 
         # keep tacking on characters until the END char is found
         while in_char != END:
-            buffer.append(ord(in_char))
+            buffer += in_char
             in_char = self.port.read(1)
 
         self.deslip(buffer)
