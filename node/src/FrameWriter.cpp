@@ -55,6 +55,9 @@ uint8_t FrameWriter::_slip(uint8_t *vals) {
 }
 
 void FrameWriter::sendMsg(uint8_t *vals, uint16_t length) {
+  if(!_isSetUp)
+    _setup();
+
   if(length > MAX_RAW)
     length = MAX_RAW;
 

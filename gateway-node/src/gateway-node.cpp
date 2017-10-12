@@ -54,7 +54,6 @@ void setup()
 
 void loop()
 {
-
   if (rf95.available())
   {
     // Should be a message for us now
@@ -63,13 +62,8 @@ void loop()
 
     if (rf95.recv(buf, &len))
     {
-      Serial.println("hit");
       digitalWrite(LED, HIGH);
       Serial.println((char*)buf);
-      Serial.print("SNR: ");
-      Serial.println(rf95.lastSNR(), DEC);
-      Serial.print("RSSI: ");
-      Serial.println(rf95.lastRssi(), DEC);
       digitalWrite(LED, LOW);
     }
     else
