@@ -1,7 +1,7 @@
 IoT
 
 
-# How 2 install platformio
+# How to install platformio
 
 http://platformio.org/platformio-ide
 
@@ -13,7 +13,7 @@ Once installed, install 2.0 beta
 
 
 
-# Usin platformio
+# Using platformio
 
 When the text editor is open, open project folder icon in the left, select the directory that contains `src/`
 
