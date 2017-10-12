@@ -48,12 +48,13 @@ void setup()
     while (1);
   }
   Serial.print("Set Freq to: "); Serial.println(RF95_FREQ);
-  rf95.setModemConfig(RH_RF95::ModemConfigChoice::Bw500Cr45Sf128);
+  rf95.setModemConfig(RH_RF95::ModemConfigChoice::Bw125Cr48Sf4096);
   rf95.setTxPower(23, false);
 }
 
 void loop()
 {
+
   if (rf95.available())
   {
     // Should be a message for us now
@@ -62,8 +63,13 @@ void loop()
 
     if (rf95.recv(buf, &len))
     {
+      Serial.println("hit");
       digitalWrite(LED, HIGH);
       Serial.println((char*)buf);
+      Serial.print("SNR: ");
+      Serial.println(rf95.lastSNR(), DEC);
+      Serial.print("RSSI: ");
+      Serial.println(rf95.lastRssi(), DEC);
       digitalWrite(LED, LOW);
     }
     else
