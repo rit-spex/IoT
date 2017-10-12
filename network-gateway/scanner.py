@@ -1,16 +1,11 @@
 import serial
+import struct
 
 END = b'\xc0'
 
 BYTE = "byte"
 INT = "int"
 FLOAT = "float"
-
-# examples of possible schema configurations in short
-schemas = {
-        1: [('temp', FLOAT), ('alt', FLOAT)],
-        2: [('time', FLOAT), ('humidity', INT)]
-}
 
 class Scanner(object):
     def __init__(self, port):
@@ -27,7 +22,7 @@ class Scanner(object):
         # keep tacking on characters until the END char is found
         while in_char != END:
             buffer += in_char
-            in_char = self.port.read(1)
+            in_char = self._port.read(1)
 
         self.deslip(buffer)
 
@@ -44,21 +39,23 @@ class Parser(object):
 
 
     def change_scheme(self, new_schema):
-        self._schema = schema
+        self._schema = new_schema
 
     def parse(self, buffer):
         """Parse a buffer into a dict using a schema."""
-        offset = 0 ret_dict = {}
+        offset = 0
+        ret_dict = {}
 
-    for tup in self._schema:
-        if tup[1] == FLOAT:
-            ret_dict[tup[0]] = struct.unpack('>f', buffer[offset:offset+4])
-            offset += 4
-        elif tup[1] == INT:
-            ret_dict[tup[0]] = struct.unpack('>i', buffer[offset:offset+4])
-            offset += 4
-        elif tup[1] == BYTE:
-            ret_dict[tup[0]] = struct.unpack('>B', buffer[offset:offset+1])
-            offset += 1
+        for tup in self._schema:
+            if tup[1] == FLOAT:
+                ret_dict[tup[0]] = struct.unpack('<f', buffer[offset:offset+4])
+                print("{}: {} {}".format(tup[0], ret_dict[tup[0]], offset))
+                offset += 4
+            elif tup[1] == INT:
+                ret_dict[tup[0]] = struct.unpack('>i', buffer[offset:offset+4])
+                offset += 4
+            elif tup[1] == BYTE:
+                ret_dict[tup[0]] = struct.unpack('>B', buffer[offset:offset+1])
+                offset += 1
 
         return ret_dict

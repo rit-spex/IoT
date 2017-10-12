@@ -63,7 +63,7 @@ void loop()
     if (rf95.recv(buf, &len))
     {
       digitalWrite(LED, HIGH);
-      Serial.println((char*)buf);
+      Serial.write(buf, len);
       digitalWrite(LED, LOW);
     }
     else

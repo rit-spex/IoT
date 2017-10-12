@@ -26,17 +26,21 @@ namespace SensorNode {
 FrameWriter::FrameWriter() :
     _radio(RH_RF95(RFM95_CS, RFM95_INT)) {}
 
-uint8_t FrameWriter::_slip(uint8_t *vals) {
+uint8_t FrameWriter::_slip(uint8_t *vals, int length) {
   uint8_t msg_cursor = 0;
 
   for(uint8_t raw_cursor = 0; raw_cursor < MAX_RAW; raw_cursor++) {
+    if(raw_cursor >= length) {
+      msg_cursor++;
+      break;
+    }
+
     if(vals[raw_cursor] == END) {
       _msg_buffer[msg_cursor] = ESC;
       msg_cursor++;
       _msg_buffer[msg_cursor] = ESC_END;
       msg_cursor++;
-    }
-    else if(vals[raw_cursor] == ESC) {
+    } else if(vals[raw_cursor] == ESC) {
       _msg_buffer[msg_cursor] = ESC;
       msg_cursor++;
       _msg_buffer[msg_cursor] = ESC_ESC;
@@ -61,10 +65,10 @@ void FrameWriter::sendMsg(uint8_t *vals, uint16_t length) {
   if(length > MAX_RAW)
     length = MAX_RAW;
 
-  _slip(vals);
+  int send_length = _slip(vals, length);
 
-
-  _radio.send(_msg_buffer, length);
+  Serial.println(send_length);
+  _radio.send(_msg_buffer, send_length);
   _clearBuffers();
 }
 

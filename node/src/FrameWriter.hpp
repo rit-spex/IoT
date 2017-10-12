@@ -17,7 +17,7 @@ class FrameWriter {
 
  private:
   bool _isSetUp = false;
-  std::uint8_t _slip(std::uint8_t* vals);
+  std::uint8_t _slip(std::uint8_t* vals, int length);
   bool _setup();
   void _clearBuffers();
 
