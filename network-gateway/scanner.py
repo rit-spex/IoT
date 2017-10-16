@@ -1,5 +1,6 @@
 import serial
 import struct
+import schemas
 
 END = b'\xc0'
 
@@ -34,22 +35,15 @@ class Scanner(object):
         buffer.replace(b'\xdb\xdd', b'\xdb')
 
 class Parser(object):
-    def __init__(self, schema):
-        self._schema = schema
-
-
-    def change_scheme(self, new_schema):
-        self._schema = new_schema
-
-    def parse(self, buffer):
+    def parse(self, buffer, schema_id):
         """Parse a buffer into a dict using a schema."""
         offset = 0
         ret_dict = {}
+        schema = schemas.SCHEMAS[schema_id]
 
-        for tup in self._schema:
+        for tup in schema:
             if tup[1] == FLOAT:
                 ret_dict[tup[0]] = struct.unpack('<f', buffer[offset:offset+4])
-                print("{}: {} {}".format(tup[0], ret_dict[tup[0]], offset))
                 offset += 4
             elif tup[1] == INT:
                 ret_dict[tup[0]] = struct.unpack('>i', buffer[offset:offset+4])

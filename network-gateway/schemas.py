@@ -4,7 +4,6 @@ SCHEMAS = {
         ('ay', 'float'),
         ('az', 'float'),
         ('gx', 'float'),
-        ('gx', 'float'),
         ('gy', 'float'),
         ('gz', 'float'),
         ('mx', 'float'),
