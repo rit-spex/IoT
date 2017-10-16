@@ -13,6 +13,10 @@ SensorNode::FrameWriter frame;
 #define NUM_VALS 12
 #define MSG_SIZE 50
 
+// bme config
+#define SEALEVELPRESSURE_HPA (1013.25)
+
+
 // Sensors
 Adafruit_BME280 bme;
 Adafruit_LSM303_Accel_Unified accel = Adafruit_LSM303_Accel_Unified(30301);
@@ -31,19 +35,12 @@ void setup() {
     Serial.println("Mag init failed");
   if(!gyro.begin())
     Serial.println("Gyro init failed");
-  
-
-  
 }
+
 uint8_t msg[MSG_SIZE];
 void loop() {
-  //frame.sendMsg((uint8_t*)msg, (uint16_t)sizeof(msg));
-  //Serial.println(frame.maxMsg());
-  //Serial.println("sending message");
-  //std::uint8_t msg[] = "hello";
-  //frame.sendMsg(msg, sizeof(msg));
-  msg[0] = 0xde;
-  msg[1] = 0xad;
+  msg[0] = 0x01; // uuid
+  msg[1] = 0x01; // schema
 
   int offset = 2;
   float vals[NUM_VALS];
@@ -70,6 +67,7 @@ void loop() {
     memcpy(msg + offset, vals + i, sizeof(float));
     offset += sizeof(float);
   }
+
   frame.sendMsg(msg, MSG_SIZE);
-  delay(1000);
+  delay(100);
 }

@@ -52,8 +52,7 @@ uint8_t FrameWriter::_slip(uint8_t *vals, int length) {
     }
   }
 
-  _msg_buffer[msg_cursor] = END;
-  msg_cursor++;
+  _msg_buffer[msg_cursor-1] = END;
 
   return msg_cursor;
 }
