@@ -12,6 +12,8 @@ def sendDataViaSocket(socketData, uuid):
   socketId = uuid
   if socketId in sockets:
       socket = sockets.get(socketId)
+      #print("sending: {}".format(repr(socketData)))
+      print("sending...")
       socket.emit('sensorData', socketData)
   else:
       sockets[socketId] = connectToSocket(socketId)
@@ -23,7 +25,7 @@ def connectToSocket(socketId):
 
     def joinServer(*args):
         print('connecting to HABnet server')
-        socketIO.emit('join', {'name': 'pythonClient2', 'type': 'dataSource'})
+        socketIO.emit('join', {'name': '{}'.format(socketId), 'type': 'dataSource'})
 
     def disconnectFromServer(*args):
         print('disconnecting from HABnet server')
@@ -32,6 +34,7 @@ def connectToSocket(socketId):
       print('join callback')
 
     socketIO = SocketIO('localhost', 3000)
+    print("connect to socket, 'name': {}".format(socketId))
     socketIO.emit('join', {'name': socketId, 'type': 'dataSource'})
     socketIO.on('joinedSuccessfully', addName)
     socketIO.on('connect', joinServer)

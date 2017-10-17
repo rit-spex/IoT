@@ -43,13 +43,13 @@ class Parser(object):
 
         for tup in schema:
             if tup[1] == FLOAT:
-                ret_dict[tup[0]] = struct.unpack('<f', buffer[offset:offset+4])
+                ret_dict[tup[0]] = struct.unpack('<f', buffer[offset:offset+4])[0]
                 offset += 4
             elif tup[1] == INT:
-                ret_dict[tup[0]] = struct.unpack('>i', buffer[offset:offset+4])
+                ret_dict[tup[0]] = struct.unpack('>i', buffer[offset:offset+4])[0]
                 offset += 4
             elif tup[1] == BYTE:
-                ret_dict[tup[0]] = struct.unpack('>B', buffer[offset:offset+1])
+                ret_dict[tup[0]] = struct.unpack('>B', buffer[offset:offset+1])[0]
                 offset += 1
 
         return ret_dict

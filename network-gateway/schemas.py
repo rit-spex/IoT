@@ -1,16 +1,16 @@
 SCHEMAS = {
     1: [
-        ('ax', 'float'),
-        ('ay', 'float'),
-        ('az', 'float'),
-        ('gx', 'float'),
-        ('gy', 'float'),
-        ('gz', 'float'),
-        ('mx', 'float'),
-        ('my', 'float'),
-        ('mz', 'float'),
-        ('temp', 'float'),
-        ('pres', 'float'),
-        ('hum', 'float')
+        ('accelX', 'float'),
+        ('accelY', 'float'),
+        ('accelZ', 'float'),
+        ('gyroX', 'float'),
+        ('gyroY', 'float'),
+        ('gyroZ', 'float'),
+        ('magX', 'float'),
+        ('magY', 'float'),
+        ('magZ', 'float'),
+        ('temp1', 'float'),
+        ('altitude', 'float'),
+        ('humidity', 'float')
     ]
 }
